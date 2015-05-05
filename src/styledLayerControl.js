@@ -31,6 +31,62 @@ L.Control.StyledLayerControl = L.Control.Layers.extend({
 			
 		},
 
+        isOverlayVisible: function (layerName) {
+            var result = false;
+            for(var selectedLayer in this._layers){
+                if( this._layers[selectedLayer].overlay === true &&
+                    this._layers[selectedLayer].name === layerName &&
+                    this._map.hasLayer(this._layers[selectedLayer].layer)){
+                    return true;
+                }
+            }
+
+            return result;
+        },
+
+    /**
+     * Programmtically check overlay visiblity
+     * @param layerName
+     * @param setCheck {boolean}
+     *
+     * @returns {boolean}
+     */
+        checkOverlay: function (layerName, setCheck) {
+            var i,
+                input,
+                obj,
+                inputs = this._form.getElementsByTagName('input'),
+                inputsLen = inputs.length;
+
+            this._handlingClick = true;
+
+            for (i = 0; i < inputsLen; i++) {
+                input = inputs[i];
+                obj = this._layers[input.layerId];
+
+                if ( !obj ) { continue; }
+
+                if (setCheck && obj.name === layerName) {
+                    if (!this._map.hasLayer(obj.layer)) {
+                        this._map.addLayer(obj.layer);
+                        this._map.fireEvent('onSelectLayer', {
+                            layerObj: obj,
+                            layerName: obj.name
+                        });
+                    }
+                    input.checked = setCheck;
+                    return true;
+                }
+                else if (this._map.hasLayer(obj.layer) && obj.name === layerName) {
+                    this._map.removeLayer(obj.layer);
+                    input.checked = setCheck;
+                    return true;
+                }
+            }
+
+            return false;
+        },
+
 		onAdd : function (map) {
 			this._initLayout();
 			this._update();
@@ -355,6 +411,10 @@ L.Control.StyledLayerControl = L.Control.Layers.extend({
 
 				if (input.checked && !this._map.hasLayer(obj.layer)) {
 					this._map.addLayer(obj.layer);
+                    this._map.fireEvent('onSelectLayer', {
+                        layerObj: obj,
+                        layerName: obj.name
+                    });
 
 				} else if (!input.checked && this._map.hasLayer(obj.layer)) {
 					this._map.removeLayer(obj.layer);
